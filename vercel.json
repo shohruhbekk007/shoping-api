@@ -1,13 +1,13 @@
 {
     "bulids":[{
-        "scr": "evelete/wsgi.py",
+        "scr": "core/wsgi.py",
         "use": "@vercel/python",
         "config":{"maxLambdaSize":"15mb", "runtime": "python3.9"}
     }],
     "routes":[
         {
             "scr":"/(.*)",
-            "dest": "evelete/wsgi.py"
+            "dest": "core/wsgi.py"
         }
     ]
 }
