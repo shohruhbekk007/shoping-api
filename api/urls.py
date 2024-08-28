@@ -4,7 +4,7 @@ from django.urls import path, include
 from .views import (
     XaridorViewSet, MahsulotViewSet, PartiyaViewSet, SkladViewSet, SotuvViewSet,RegisterAPIView, LoginAPIView, LogoutAPIView,
     tushum_statistika, eng_kop_sotilgan_tovar, umumiy_sotuv_tovarlar_kesimida,
-    yoqotishlar_qarzdorlar, umumiy_tovarlar,
+    yoqotishlar_qarzdorlar, umumiy_tovarlar, Home
 )
 from rest_framework.routers import DefaultRouter
 from rest_framework import permissions
@@ -45,4 +45,5 @@ urlpatterns = [
     path('api/register/', RegisterAPIView.as_view(), name='register'),
     path('api/login/', LoginAPIView.as_view(), name='login'),
     path('api/logout/', LogoutAPIView.as_view(), name='logout'),
+    path("", Home)
 ]

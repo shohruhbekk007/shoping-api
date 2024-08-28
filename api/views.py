@@ -10,6 +10,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from .serializers import RegisterSerializer, UserSerializer
+from django.http import HttpResponse
 
 class RegisterAPIView(APIView):
     def post(self, request):
@@ -140,3 +141,8 @@ class SkladViewSet(viewsets.ModelViewSet):
 class SotuvViewSet(viewsets.ModelViewSet):
     queryset = Sotuv.objects.all()
     serializer_class = SotuvSerializer
+
+
+
+def Home(request):
+    return HttpResponse("Salom maktab")
