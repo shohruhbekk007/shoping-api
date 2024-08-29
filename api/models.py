@@ -1,77 +1,73 @@
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.core.exceptions import ValidationError
 
-class Mahsulot(models.Model):
-    nomi = models.CharField(max_length=255)
-    narxi = models.DecimalField(max_digits=10, decimal_places=2)
-    olingan_narxi = models.DecimalField(max_digits=10, decimal_places=2)
-    dona = models.IntegerField()
-    rasm = models.ImageField(upload_to='product_images/', null=True, blank=True)
+class Products(models.Model):
+    name = models.CharField(max_length=250)
+    images = models.ImageField(upload_to="Images/party", null=True)
+    created = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.nomi
+    def __str__(self) -> str:
+        return self.name
+    
 
-class Xaridor(models.Model):
-    nomi = models.CharField(max_length=255)
-    telefon_raqami = models.CharField(max_length=20)
-    maxsulot_nomi = models.ForeignKey(to=Mahsulot, on_delete=models.CASCADE)
-    oladigan_maxsulot_soni = models.IntegerField()
-    umumiy_savdo = models.DecimalField(max_digits=10, decimal_places=2)
-    qarzdor = models.BooleanField(default=False)
+class Warehouse(models.Model):
+    name = models.ForeignKey(to=Products, on_delete=models.CASCADE)
+    number = models.IntegerField()
+    money_was_token = models.DecimalField(max_digits=15, decimal_places=2)
+    money_to_was = models.DecimalField(max_digits=15, decimal_places=2)
+    created = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.nomi} - {self.maxsulot_nomi.nomi}"
+    def __str__(self) -> str:
+        return f"{self.name}"
 
-class Partiya(models.Model):
-    sana = models.DateField()
-    umumiy_summa = models.DecimalField(max_digits=10, decimal_places=2)
-    qanchadan_olingani = models.DecimalField(max_digits=10, decimal_places=2)
-    nomi = models.ForeignKey(to=Mahsulot, on_delete=models.CASCADE)
-    qanchadan_sotiladigani = models.DecimalField(max_digits=10, decimal_places=2)
-    keladigan_maxsulot_soni = models.IntegerField()
-    rasm = models.ImageField(upload_to='batch_images/', null=True, blank=True)
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.nomi:
-            sklad, created = Sklad.objects.get_or_create(mahsulot=self.nomi)
-            sklad.narxi = self.qanchadan_sotiladigani
-            sklad.dona = (sklad.dona or 0) + self.keladigan_maxsulot_soni
-            sklad.save()
+class Partys(models.Model):
+    name = models.ForeignKey(to=Products, on_delete=models.CASCADE)
+    number = models.IntegerField()
+    money_was_token = models.DecimalField(max_digits=15, decimal_places=2)
+    money_to_was = models.DecimalField(max_digits=15, decimal_places=2)
+    created = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"Partiya: {self.nomi.nomi} - {self.sana}"
+    def __str__(self) -> str:
+        return f"{self.name}"
 
-class Sklad(models.Model):
-    mahsulot = models.ForeignKey(Mahsulot, on_delete=models.CASCADE)
-    dona = models.IntegerField(default=0)  # Default value of 0
-    narxi = models.DecimalField(max_digits=10, decimal_places=2)
-    rasm = models.ImageField(upload_to='warehouse_images/', null=True, blank=True)
 
-    def __str__(self):
-        return f"Sklad: {self.mahsulot.nomi} - {self.dona} dona"
+class Buyers(models.Model):
+    users = models.CharField(max_length=50)
+    phone_number = models.CharField(max_length=20, null=True)
+    address = models.CharField(max_length=50, null=True)
+    name = models.ForeignKey(to=Products, on_delete=models.CASCADE)
+    number = models.IntegerField()
+    money_to_was = models.DecimalField(max_digits=15, decimal_places=2)
+    debtor = models.BooleanField()
 
-class Sotuv(models.Model):
-    mahsulot = models.ForeignKey(Mahsulot, on_delete=models.CASCADE)
-    xaridor = models.ForeignKey(Xaridor, on_delete=models.CASCADE)
-    sana = models.DateField(auto_now_add=True)
-    sotilgan_dona = models.IntegerField()
-    sotilgan_narx = models.DecimalField(max_digits=10, decimal_places=2)
-    qarzdor = models.BooleanField(default=False)
-    olingan_summa = models.DecimalField(max_digits=10, decimal_places=2)
+    def __str__(self) -> str:
+        return self.users
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.mahsulot:
-            sklad = Sklad.objects.filter(mahsulot=self.mahsulot).first()
-            if sklad:
-                if sklad.dona >= self.sotilgan_dona:
-                    sklad.dona -= self.sotilgan_dona
-                    sklad.save()
-                else:
-                    raise ValueError("Skladda yetarli miqdordagi mahsulot yo'q.")
 
-    def __str__(self):
-        return f"Sotuv: {self.mahsulot.nomi} - {self.sotilgan_dona} dona"
+from django.core.exceptions import ObjectDoesNotExist
+
+@receiver(post_save, sender=Partys)
+def update_warehouse_on_partys_save(sender, instance, **kwargs):
+    try:
+        warehouse = Warehouse.objects.get(name=instance.name)
+        warehouse.money_was_token = instance.money_was_token
+        warehouse.money_to_was = instance.money_to_was
+        warehouse.number += instance.number
+        warehouse.save()
+    except ObjectDoesNotExist:
+        warehouse = Warehouse.objects.create(
+            name=instance.name,
+            number=instance.number,
+            money_was_token=instance.money_was_token,
+            money_to_was=instance.money_to_was
+        )
+        warehouse.save()
+
+
+@receiver(post_save, sender=Buyers)
+def update_warehouse_on_buyers_save(sender, instance, **kwargs):
+    warehouse = Warehouse.objects.get(name=instance.name)
+    warehouse.number -= instance.number
+    warehouse.save()

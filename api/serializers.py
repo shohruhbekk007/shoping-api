@@ -1,55 +1,24 @@
 from rest_framework import serializers
-from .models import  Xaridor, Mahsulot, Partiya, Sklad, Sotuv
-from django.contrib.auth.models import User
+from .models import Products, Warehouse, Partys, Buyers
 
-class UserSerializer(serializers.ModelSerializer):
+class ProductsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ['id', 'username', 'email']
-
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    password2 = serializers.CharField(write_only=True)
-
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password', 'password2']
-
-    def validate(self, data):
-        if data['password'] != data['password2']:
-            raise serializers.ValidationError({"password": "Passwords must match."})
-        return data
-
+        model = Products
+        fields = '__all__'
     def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password']
-        )
-        return user
+        return Products.objects.create(**validated_data)
 
-
-class XaridorSerializer(serializers.ModelSerializer):
+class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Xaridor
+        model = Warehouse
         fields = '__all__'
 
-class MahsulotSerializer(serializers.ModelSerializer):
+class PartysSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Mahsulot
+        model = Partys
         fields = '__all__'
 
-class PartiyaSerializer(serializers.ModelSerializer):
+class BuyersSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Partiya
-        fields = '__all__'
-
-class SkladSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Sklad
-        fields = '__all__'
-
-class SotuvSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Sotuv
+        model = Buyers
         fields = '__all__'

@@ -1,49 +1,52 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from django.urls import path, include
-from .views import (
-    XaridorViewSet, MahsulotViewSet, PartiyaViewSet, SkladViewSet, SotuvViewSet,RegisterAPIView, LoginAPIView, LogoutAPIView,
-    tushum_statistika, eng_kop_sotilgan_tovar, umumiy_sotuv_tovarlar_kesimida,
-    yoqotishlar_qarzdorlar, umumiy_tovarlar, Home
-)
-from rest_framework.routers import DefaultRouter
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from .views import (
+    RevenueAPIView, 
+    TopSellingProductsAPIView, 
+    LeastSellingProductsAPIView, 
+    TotalSalesByProductAPIView,
+    LossesAPIView, 
+    DebtorsAPIView,
+    ProductStockAPIView,
+    ProductsViewSet, WarehouseViewSet, PartysViewSet, BuyersViewSet
+)
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
+router = DefaultRouter()
+router.register(r'products', ProductsViewSet)
+router.register(r'warehouse', WarehouseViewSet)
+router.register(r'partys', PartysViewSet)
+router.register(r'buyers', BuyersViewSet)
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Ombor Boshqaruv Tizimi API",
+        title="API Dokumentatsiya",
         default_version='v1',
-        description="Ombor boshqaruv tizimi uchun API hujjatlari",
+        description="Bu API uchun hujjatlashtirish",
         terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="support@ombor.com"),
+        contact=openapi.Contact(email="contact@myapi.local"),
         license=openapi.License(name="BSD License"),
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
 
-
-router = DefaultRouter()
-router.register(r'xaridorlar', XaridorViewSet)
-router.register(r'mahsulotlar', MahsulotViewSet)
-router.register(r'partiya', PartiyaViewSet)
-router.register(r'sklad', SkladViewSet)
-router.register(r'sotuvlar', SotuvViewSet)
-
 urlpatterns = [
-    path('api/', include(router.urls)),
-    path('api/statistika/tushum/', tushum_statistika),
-    path('api/statistika/eng_kop_sotilgan_tovar/', eng_kop_sotilgan_tovar),
-    path('api/statistika/umumiy_sotuv_tovarlar_kesimida/', umumiy_sotuv_tovarlar_kesimida),
-    path('api/statistika/yoqotishlar_qarzdorlar/', yoqotishlar_qarzdorlar),
-    path('api/statistika/umumiy_tovarlar/', umumiy_tovarlar),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-    path('api/register/', RegisterAPIView.as_view(), name='register'),
-    path('api/login/', LoginAPIView.as_view(), name='login'),
-    path('api/logout/', LogoutAPIView.as_view(), name='logout'),
-    path("", Home)
+    path('', include(router.urls)),
+    path('revenue/', RevenueAPIView.as_view(), name='revenue'),
+    path('top-selling/', TopSellingProductsAPIView.as_view(), name='top-selling'),
+    path('least-selling/', LeastSellingProductsAPIView.as_view(), name='least-selling'),
+    path('total-sales/', TotalSalesByProductAPIView.as_view(), name='total-sales'),
+    path('losses/', LossesAPIView.as_view(), name='losses'),
+    path('debtors/', DebtorsAPIView.as_view(), name='debtors'),
+    path('stock/', ProductStockAPIView.as_view(), name='stock'),
+    path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger-schema'),
+    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='redoc'),
 ]
