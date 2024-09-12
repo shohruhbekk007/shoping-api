@@ -1,73 +1,63 @@
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
-class Products(models.Model):
-    name = models.CharField(max_length=250)
-    images = models.ImageField(upload_to="Images/party", null=True)
-    created = models.DateTimeField(auto_now_add=True)
+class Xaridor(models.Model):
+    ism = models.CharField(max_length=255)
+    telefon = models.CharField(max_length=15)
+    manzil = models.CharField(max_length=255)
+    ummumiy_savdo = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True, blank=True)
+    qarzdorlik = models.BooleanField(default=False, null=True, blank=True)
+    qarz_miqdori = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True, blank=True)
 
-    def __str__(self) -> str:
-        return self.name
+    def __str__(self):
+        return self.ism
+
+
+class QarzlarniSondirish(models.Model):
+    xaridor = models.ForeignKey(Xaridor, on_delete=models.CASCADE)
+    tolangan_miqdor = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    toliq_tolash = models.BooleanField(default=False)
+    sana = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.xaridor.ism} - {self.tolangan_miqdor if self.tolangan_miqdor else 'Toliq qarz'} to'landi"
     
 
-class Warehouse(models.Model):
-    name = models.ForeignKey(to=Products, on_delete=models.CASCADE)
-    number = models.IntegerField()
-    money_was_token = models.DecimalField(max_digits=15, decimal_places=2)
-    money_to_was = models.DecimalField(max_digits=15, decimal_places=2)
-    created = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self) -> str:
-        return f"{self.name}"
+class Maxsulotlar(models.Model):
+    maxsulot_nomi = models.CharField(max_length=255)
+    sotiladigan_narx = models.DecimalField(max_digits=10, decimal_places=2)
+    miqdori = models.PositiveIntegerField()
+    rasm = models.ImageField(upload_to='maxsulotlar_rasm/', null=True, blank=True)
+    sana = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.maxsulot_nomi
 
-class Partys(models.Model):
-    name = models.ForeignKey(to=Products, on_delete=models.CASCADE)
-    number = models.IntegerField()
-    money_was_token = models.DecimalField(max_digits=15, decimal_places=2)
-    money_to_was = models.DecimalField(max_digits=15, decimal_places=2)
-    created = models.DateTimeField(auto_now_add=True)
+class Partiya(models.Model):
+    maxsulot_nomi = models.CharField(max_length=255)
+    maxsulot_sotib_olingan_narx = models.DecimalField(max_digits=10, decimal_places=2)
+    maxsulot_soni = models.PositiveIntegerField()
+    sotilishi_kutulyotgan_narx = models.DecimalField(max_digits=10, decimal_places=2)
+    rasm = models.ImageField(upload_to='partiya_rasm/', blank=True, null=True)
 
-    def __str__(self) -> str:
-        return f"{self.name}"
+    def __str__(self):
+        return self.maxsulot_nomi
+    
+class Sotuv(models.Model):
+    xaridor_ismi = models.ForeignKey(Xaridor, on_delete=models.SET_NULL, null=True, blank=True)
+    maxsulotlar = models.ForeignKey(Maxsulotlar, on_delete=models.CASCADE)
+    maxsulotning_jami_summasi = models.DecimalField(max_digits=10, decimal_places=2)
+    qarz_summa = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    sana = models.DateTimeField(auto_now_add=True)
 
-
-class Buyers(models.Model):
-    users = models.CharField(max_length=50)
-    phone_number = models.CharField(max_length=20, null=True)
-    address = models.CharField(max_length=50, null=True)
-    name = models.ForeignKey(to=Products, on_delete=models.CASCADE)
-    number = models.IntegerField()
-    money_to_was = models.DecimalField(max_digits=15, decimal_places=2)
-    debtor = models.BooleanField()
-
-    def __str__(self) -> str:
-        return self.users
+    def __str__(self):
+        return f"Sotuv: {self.xaridor_ismi} - {self.sana}" 
 
 
-from django.core.exceptions import ObjectDoesNotExist
+class SotuvItem(models.Model):
+    sotuv = models.ForeignKey(Sotuv, on_delete=models.CASCADE)
+    maxsulot = models.ForeignKey(Maxsulotlar, on_delete=models.CASCADE)
+    maxsulot_soni = models.PositiveIntegerField()
 
-@receiver(post_save, sender=Partys)
-def update_warehouse_on_partys_save(sender, instance, **kwargs):
-    try:
-        warehouse = Warehouse.objects.get(name=instance.name)
-        warehouse.money_was_token = instance.money_was_token
-        warehouse.money_to_was = instance.money_to_was
-        warehouse.number += instance.number
-        warehouse.save()
-    except ObjectDoesNotExist:
-        warehouse = Warehouse.objects.create(
-            name=instance.name,
-            number=instance.number,
-            money_was_token=instance.money_was_token,
-            money_to_was=instance.money_to_was
-        )
-        warehouse.save()
-
-
-@receiver(post_save, sender=Buyers)
-def update_warehouse_on_buyers_save(sender, instance, **kwargs):
-    warehouse = Warehouse.objects.get(name=instance.name)
-    warehouse.number -= instance.number
-    warehouse.save()
+    def __str__(self):
+        return f"{self.maxsulot} - {self.maxsulot_soni} dona"
